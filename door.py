@@ -21,9 +21,9 @@ def check_door():
 		#else door open
 		else: 
 			requests.post(api)
-			print "door open"
+			print "door opened"
 
-print "Reporting door status every " + str(timeout) + " seconds"
+print "Checking door status every " + str(timeout) + " seconds"
 l = task.LoopingCall(check_door)
 l.start(timeout) # start calls every n seconds
 reactor.run()
