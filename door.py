@@ -23,7 +23,7 @@ def check_door():
 			requests.post(api)
 			print "door opened"
 
-print "Checking door status every " + str(timeout) + " seconds"
+print "Checking	 door status every " + str(timeout) + " seconds"
 l = task.LoopingCall(check_door)
 l.start(timeout) # start calls every n seconds
 reactor.run()
