@@ -1,65 +1,42 @@
 import RPi.GPIO as GPIO
-import httplib, datetime, time
-import sqlite3
-
-date = time.asctime( time.localtime( time.time() ) )
-opened_sec = -1
+import requests
+import json
+import time
 
 TIMEOUT = 5.0 #seconds
-API_HOST = "hackerspace-ntnu.no"
-API_ENDPOINT = "/api/door"
+API_HOST = 'https://hackerspace-ntnu.no'
+API_ENDPOINT = '/api/door'
 GPIO_PIN = 7
+API_KEY = None
 
-# connect or create if not exists sqlite3 db
-def connect(today, opened, closed, total):
+def get_api_key():
+    with open('KEY.txt', 'r') as open_file:
+       return open_file.readline().strip()
 
-  conn = sqlite3.connect('door_graph.db')
-  c = conn.cursor()
+def check_door():
+    status = GPIO.input(GPIO_PIN))
+    return bool(status)
 
-  c.execute(''' CREATE TABLE IF NOT EXISTS graph (today date, opened int, closed int, total int) ''')
-  c.execute(" INSERT INTO graph (today, opened, closed, total) VALUES (?, ?, ?, ?)", [today, opened, closed, total] )
+def post_status(status):
+    data = {
+        'key': API_KEY,
+        'status': status
+    }
+    return requests.post(API_HOST + API_ENDPOINT, data=json.dumps(data))
 
-  #save
-  conn.commit()
-
-  conn.close()
-
-def calculate(date, opened, closed):
-
-  time = closed - opened
-  if(time >= 30 and time <= 600000):
-    print str(date) + " - Hackerspace has been open in " + str(time) + " seconds."
-    connect(date, opened, closed, time)
-
-def check_door(state):
-  # Read state from GPIO.
-  gpio = GPIO.input(GPIO_PIN)
-
-  if state != gpio:
-    # State has changed, create connection to API.
-    conn = httplib.HTTPSConnection(API_HOST)
-
-    if gpio == 1:
-      conn.request('POST', API_ENDPOINT+"/closed")
-      closed_sec = int(round(time.time()))
-      global date, opened_sec
-      calculate(date, opened_sec, closed_sec)
-      print "Door closed"
-    else:
-      conn.request('POST', API_ENDPOINT+"/open")
-      opened_sec = int(round(time.time())) 
-      print "Door open"
-  return gpio
 
 if __name__ == '__main__':
-  # Initialize the GPIO.
-  GPIO.setmode(GPIO.BOARD)
-  GPIO.setup(GPIO_PIN, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(GPIO_PIN, GPIO.IN, pull_up_down = GPIOGPIO.PUD_DOWN)
+    
+    API_KEY = get_api_key()
+    current_status = False	
+    
+    while True:
+        current_status, old_status = check_door(), current_status
 
-  # Initialize state to 0.
-  state = 0
+        if current_status != old_status:
+            post_status(current_status)
 
-  while True:
-    # Sleep between checks, and run forever.
-    state = check_door(state)
-    time.sleep(TIMEOUT)
+        time.sleep(TIMEOUT)
+
