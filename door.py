@@ -1,37 +1,49 @@
-import RPi.GPIO as GPIO
-import requests
 import json
+import logging
+import sys
 import time
+from urllib.parse import urljoin
+
+import RPi.GPIO as GPIO
+
+import requests
 
 TIMEOUT = 5.0 #seconds
 API_HOST = 'https://hackerspace-ntnu.no'
-API_ENDPOINT = '/api/door'
-GPIO_PIN = 7
+API_ENDPOINT = '/door/'
+GPIO_PIN = 18
 API_KEY = None
+
+logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.INFO)
+
 
 def get_api_key():
     with open('KEY.txt', 'r') as open_file:
-       return open_file.readline().strip()
+        return open_file.readline().strip()
 
 def check_door():
-    status = GPIO.input(GPIO_PIN))
+    status = GPIO.input(GPIO_PIN)
     return bool(status)
 
 def post_status(status):
     data = {
         'key': API_KEY,
-        'status': status
+        'status': status,
     }
-    return requests.post(API_HOST + API_ENDPOINT, data=json.dumps(data))
+    url = urljoin(API_HOST, API_ENDPOINT)
+    logging.info('Posting status {st} to {url}'.format(st=status, url=url))
+    return requests.post(url, data=json.dumps(data))
 
+def init_gpio():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(GPIO_PIN, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 
 if __name__ == '__main__':
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(GPIO_PIN, GPIO.IN, pull_up_down = GPIOGPIO.PUD_DOWN)
-    
+    init_gpio()
     API_KEY = get_api_key()
-    current_status = False	
+    current_status = False
     
+    logging.info('Starting door-watching busy loop')
     while True:
         current_status, old_status = check_door(), current_status
 
@@ -39,4 +51,3 @@ if __name__ == '__main__':
             post_status(current_status)
 
         time.sleep(TIMEOUT)
-
