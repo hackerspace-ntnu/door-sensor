@@ -1,14 +1,14 @@
 import json
 import logging
 import sys
-import time
 import requests
-import datetime.datetime as datetime
+import time
 from urllib.parse import urljoin
 import RPi.GPIO as GPIO
 
 #Settings
-TIMEOUT = 5.0 
+RECONNECT_DELAY = 60.0
+TIMEOUT = 5.0
 API_HOST = 'https://hackerspace-ntnu.no'
 API_ENDPOINT = '/door/'
 GPIO_PIN = 18
@@ -47,12 +47,13 @@ if __name__ == '__main__':
     init_gpio()
     API_KEY = get_api_key()
     current_status = False
-    
+
     logging.info('Starting door-watching busy loop')
     while True:
         current_status, old_status = check_door(), current_status
-
         if current_status != old_status:
-            post_status(current_status)
-
+            r = post_status(current_status)
+            while(r.status_code != 200):
+                r = post_status(current_status)
+                time.sleep(RECONNECT_DELAY)
         time.sleep(TIMEOUT)
