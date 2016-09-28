@@ -14,8 +14,8 @@ API_HOST = 'https://hackerspace-ntnu.no'
 API_ENDPOINT = '/door/'
 API_KEY = None #Intentionally set to None
 
-SENSOR_PIN = 18
-LED_PINS = R_PIN, G_PIN, B_PIN = 17, 27, 22
+SENSOR_PIN = 4
+LED_PINS = R_PIN, G_PIN, B_PIN = 22, 27, 17
 BLINK_PAUSE = 0.25
 
 OPEN, CLOSED = True, False
