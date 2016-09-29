@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from gpio import blink_led, check_door, hold_led, init_gpio
+from gpio import BLUE, GREEN, RED, LEDControl, check_door, init_gpio
 
 RECONNECT_DELAY = 60.0
 MAX_TRIES = 5
@@ -41,6 +41,9 @@ def post_status(status):
 # Main function that starts the program and calls post_status if state of door changes
 if __name__ == '__main__':
     init_gpio()
+    LED = LEDControl()
+    LED.blink(BLUE)
+
     API_KEY = get_api_key()
     current_status = None
 
@@ -52,7 +55,7 @@ if __name__ == '__main__':
 
             if current_status != old_status:
                 while True:
-                    hold_led(red=1, green=1)
+                    LED.hold(BLUE)
 
                     try:
                         r = post_status(current_status)
@@ -61,16 +64,18 @@ if __name__ == '__main__':
                             logging.info('Successfully posted status {} to API'.format(current_status))
 
                             if current_status == OPEN:
-                                blink_led(green=1, times=3)
+                                LED.hold(GREEN)
                             else:
-                                blink_led(red=1, times=3)
+                                LED.hold(RED)
 
                             break
                         else:
+                            LED.blink(BLUE)
                             logging.warning('Server responded with status code {}'.format(r.status_code))
                             tries += 1
 
                     except requests.exceptions.ConnectionError:
+                        LED.blink(BLUE)
                         logging.warning('ConnectionError')
 
                         if tries >= MAX_TRIES:
@@ -84,6 +89,7 @@ if __name__ == '__main__':
 
             time.sleep(TIMEOUT)
     except KeyboardInterrupt:
-        hold_led(0, 0, 0)
+        LED.off()
+        LED.terminated.set()
         logging.info('Loop interrupted by keyboard')
         exit(0)

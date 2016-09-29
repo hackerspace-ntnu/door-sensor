@@ -1,4 +1,5 @@
-.pyc
 *.swp
+.pyc
 KEY.txt
+__pycache__/
 venv
